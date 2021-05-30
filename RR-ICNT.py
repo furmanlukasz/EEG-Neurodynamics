@@ -51,8 +51,8 @@ if __name__ == '__main__':
 
     filename = 'dane.pkl'
     df=pickle.load(open(filename,'rb'))
-
-    srate = 256
+    dane = df
+    srate = 250
     len(df)
     time = np.arange(len(df[0]))
     npnts = len(time)
@@ -61,18 +61,18 @@ if __name__ == '__main__':
     #plt.show()
 
     ################################   matlab unicorn data
-    f = h5py.File('Data_fl.mat')
-    df = np.array(f['y']).T
-    dane = df[1:] #FZ
-    dane.shape
-    ndane = np.zeros((8,10000))
-    ndane.shape
-    for i in range(len(dane)):
-        ndane[i] = dane[i][5000:15000]
-    dane = ndane
+    # f = h5py.File('Data_fl.mat')
+    # df = np.array(f['y']).T
+    # dane = df[1:] #FZ
+    # dane.shape
+    # ndane = np.zeros((8,10000))
+    # ndane.shape
+    # for i in range(len(dane)):
+    #     ndane[i] = dane[i][5000:15000]
+    # dane = ndane
 
 
-    elnames = ['F3','F4','FCz','C3','C4','Pz','O1','O2']  # C5, C6, Cz, Fz
+    elnames = ['FZ','F4','FCz','C3','C4','Pz','O1','O2']  # C5, C6, Cz, Fz
 
     timedel = 8
 
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     fnn_dic = {}
     tt_dic = {}
     timestamps = []
-    el_idx = 6
+    el_idx = 0
     subject = 'IB2018A0Z63922_rso'
     subject = 'al'
 

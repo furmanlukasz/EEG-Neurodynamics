@@ -41,3 +41,18 @@ if __name__ == '__main__':
         data2plot = notch(51,np.array(df[i][in_r:out_r]),srate)
         plotSignal('electrode'+str(i),np.array(data2plot))
         plt.savefig('ele_'+str(i)+'.png')
+
+
+def plotingtest():
+    img = np.random.randint(-100, 100, (10, 10))
+    fig = plt.figure(figsize=(8, 8))
+    grid = plt.GridSpec(6, 6, hspace=0.6, wspace=0.6)
+    main_ax = fig.add_subplot(grid[:-1, 1:])
+
+    mm = main_ax.imshow(img)
+    cbar_ax = fig.add_axes([0.007, 0.2, 0.03, 0.7])
+    fig.colorbar(mm, cax=cbar_ax)
+    y_hist = fig.add_subplot(grid[:-1, 0], xticklabels=[], sharey=main_ax)
+    x_hist = fig.add_subplot(grid[-1, 1:], yticklabels=[], sharex=main_ax)
+
+    plt.show()
