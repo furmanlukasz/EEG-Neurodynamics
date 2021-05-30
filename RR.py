@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import signal
 import scipy.fftpack
-
+import h5py
 
 from pyrqa.image_generator import ImageGenerator
 from pyrqa.computation import RPComputation
@@ -20,7 +20,18 @@ import pywt
 import pickle
 
 
+def add_colorbar(mappable):
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    import matplotlib.pyplot as plt
+    last_axes = plt.gca()
+    ax = mappable.axes
+    fig = ax.figure
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    cbar = fig.colorbar(mappable, cax=cax)
+    plt.sca(last_axes)
 
+    return cbar
 def plotSignal(data):
   fig,ax = plt.subplots(1,2,figsize=(20,6))
   ax[0].plot(time,data)
@@ -40,17 +51,28 @@ if __name__ == '__main__':
 
     filename = 'dane.pkl'
     df=pickle.load(open(filename,'rb'))
+
     srate = 256
-    len(df[0])
+    len(df)
     time = np.arange(len(df[0]))
     npnts = len(time)
     hz = np.linspace(0, srate / 2, int(npnts / 2) + 1)
-    plotSignal(np.array(df[0]))
-    plt.show()
-    dane = df #FZ
-    #matdata = loadmat('sampleEEGdata.mat')
-    #matdata.items()
-    elnames = ['Fz']  # C5, C6, Cz, Fz
+    #plotSignal(np.array(df[0]))
+    #plt.show()
+
+    ################################   matlab unicorn data
+    f = h5py.File('Data_fl.mat')
+    df = np.array(f['y']).T
+    dane = df[1:] #FZ
+    dane.shape
+    ndane = np.zeros((8,10000))
+    ndane.shape
+    for i in range(len(dane)):
+        ndane[i] = dane[i][5000:15000]
+    dane = ndane
+
+
+    elnames = ['F3','F4','FCz','C3','C4','Pz','O1','O2']  # C5, C6, Cz, Fz
 
     timedel = 8
 
@@ -63,9 +85,9 @@ if __name__ == '__main__':
     fnn_dic = {}
     tt_dic = {}
     timestamps = []
-    el_idx = 0
+    el_idx = 6
     subject = 'IB2018A0Z63922_rso'
-
+    subject = 'al'
 
     db4 = pywt.Wavelet('db4')
     coeffs = pywt.wavedec(dane[el_idx], db4, mode='periodic', level=5)
@@ -95,18 +117,25 @@ if __name__ == '__main__':
         computation = RPComputation.create(settings,
                                            verbose=True)
         result = computation.run()
+        #fig, ax = plt.subplots(1, 2, figsize=(6, 6))
+        fig = plt.figure(figsize=(6, 6))
+        grid = plt.GridSpec(4, 4, hspace=0.2, wspace=0.2)
+        main_ax = fig.add_subplot(grid[:-1, 1:])
+        y_hist = fig.add_subplot(grid[:-1, 0], xticklabels=[], sharey=main_ax)
+        x_hist = fig.add_subplot(grid[-1, 1:], yticklabels=[], sharex=main_ax)
 
+        main_ax.imshow(result.recurrence_matrix_reverse_normalized[::-1], cmap='jet', interpolation='none', origin='upper')
+        fig.colorbar()
+        main_ax.invert_yaxis()
+        # plt.title(elnames[el_idx] + ', ' + nazwy[a] + ' band, ' + 'emb = ' + str(embedding) + ' td = ' + str(
+        #     timedel) + ' timestamp ' + str((interval * counter) / srate))
 
-        plt.imshow(result.recurrence_matrix_reverse_normalized[::-1], cmap='jet', interpolation='none', origin='upper')
-        plt.colorbar()
-        plt.gca().invert_yaxis()
-        plt.title(elnames[el_idx] + ', ' + nazwy[a] + ' band, ' + 'emb = ' + str(embedding) + ' td = ' + str(
-            timedel) + ' timestamp ' + str((interval * counter) / 250))
         plt.savefig(
-             "Dist_" + subject + '_' + elnames[el_idx] + '_' + nazwy[a] + '_embedding_' + str(embedding) + '_td_' + str(
-                 timedel) + '_timestamp_' + str((interval * counter) / 250) + '_v4s' + '.png',  dpi=500)
+             "RR_plots/Dist_" + subject + '_' + elnames[el_idx] + '_' + nazwy[a] + '_emb_' + str(embedding) + '_td_' + str(
+                 timedel) + '_tstamp_' + str((interval * counter) / srate) + '_v4s' + '.png',  dpi=500)
         plt.close()
         ###################################
+
         #ImageGenerator.save_recurrence_plot(result.recurrence_matrix_reverse_normalized,'fz_tests.png')
         settings = Settings(time_series,
                             analysis_type=Classic,
@@ -123,9 +152,9 @@ if __name__ == '__main__':
 
         rqaArray = result.to_array()
         tt = rqaArray[10]
-        fnn_dic[str((interval * counter) / 250)] = fnn
-        tt_dic[str((interval * counter) / 250)] = tt
-        timestamps.append((interval * counter) / 250)
+        fnn_dic[str((interval * counter) / srate)] = fnn
+        tt_dic[str((interval * counter) / srate)] = tt
+        timestamps.append((interval * counter) / srate)
         fnn_list.append(fnn)
         tt_list.append(tt)
         counter += 1
