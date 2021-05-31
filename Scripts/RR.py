@@ -34,47 +34,44 @@ def plotSignal(data):
   ax[1].set_xlabel('Frequency (Hz)')
   ax[1].set_title('Frequency domain')
 
+PlotTimeAndFreq = True
+ComputeResult = False
+
+def loadUnicornData(filename):
+    f = h5py.File(filename)
+    data = np.array(f['y']).T
+    df = data[1:]
+    return np.array(df)
 
 def loadData(filename):
     data = loadmat(filename)
-    return np.array(data['tosave'])
+    electrodes = data['chanlocs']['labels']
+    return np.array(data['EEGdata']),[electrodes[0][i][0] for i in range(len(electrodes[0]))]
 
-dataSet = loadData('../DataSets/FAT2016SUBz003_rsc_uncuts_run_1.mat')
+def setDataSlice(df,fromrange, torange):
+    ndata = np.zeros((len(df), torange-fromrange))
+    for i in range(len(df)):
+        ndata[i] = df[i][fromrange:torange]
+    return ndata
 
-dataSet[56]
+
+
 
 if __name__ == '__main__':
 
-    filename = 'dane.pkl'
-    df=pickle.load(open(filename,'rb'))
+    df, electrodeName = loadData('DataSets/teData.mat')
+    electrodeName
+    dane = setDataSlice(df, 2000, 3000)
 
-    srate = 256
-    len(df)
-    time = np.arange(len(df[0]))
-    npnts = len(time)
-    hz = np.linspace(0, srate / 2, int(npnts / 2) + 1)
-    #plotSignal(np.array(df[0]))
-    #plt.show()
+    srate = 250
 
-    ################################   matlab unicorn data
-    f = h5py.File('Data_fl.mat')
-    df = np.array(f['y']).T
-    dane = df[1:] #FZ
-    dane.shape
-    ndane = np.zeros((8,16000))
-    ndane.shape
-    for i in range(len(dane)):
-        ndane[i] = dane[i][2000:18000]
-    dane = ndane
-
-
-    elnames = ['F3','F4','FCz','C3','C4','Pz','O1','O2']  # C5, C6, Cz, Fz
+    elnames = electrodeName
 
     timedel = 1
 
     embedding = 5  # [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
 
-    interval = 2000
+    interval = 1000
 
     fnn_list = []
     tt_list = []
@@ -84,6 +81,13 @@ if __name__ == '__main__':
     el_idx = 6
     subject = 'IB2018A0Z63922_rso'
     subject = 'beta'
+
+    time = np.arange(len(dane[el_idx]))
+    npnts = len(time)
+    hz = np.linspace(0, srate / 2, int(npnts / 2) + 1)
+    if PlotTimeAndFreq:
+        plotSignal(np.array(dane[el_idx]))
+
 
     db4 = pywt.Wavelet('db4')
     coeffs = pywt.wavedec(dane[el_idx], db4, mode='periodic', level=5)
@@ -98,8 +102,8 @@ if __name__ == '__main__':
         counter = 1
     for j in list_of_slices:
 
-        fnn = np.asscalar(dimension.fnn(j, dim=[embedding], tau=timedel, metric='euclidean')[2])
-
+        fnn = dimension.fnn(j, dim=[embedding], tau=timedel, metric='euclidean')[2].item()
+        #fnn = np.asscalar(dimension.fnn(j, dim=[embedding], tau=timedel, metric='euclidean')[2])
 
         time_series = TimeSeries(j,
                                  embedding_dimension=embedding,
@@ -113,15 +117,7 @@ if __name__ == '__main__':
         computation = RPComputation.create(settings,
                                            verbose=True)
         result = computation.run()
-        #fig, ax = plt.subplots(1, 2, figsize=(6, 6))
 
-
-        # grid = plt.GridSpec(4, 4, hspace=0.5, wspace=0.5)
-        # main_ax = fig.add_subplot(grid[:-1, 1:])
-        # y_hist = fig.add_subplot(grid[:-1, 0], xticklabels=[], sharey=main_ax)
-        # x_hist = fig.add_subplot(grid[-1, 1:], yticklabels=[], sharex=main_ax)
-
-        #fig, ax = plt.subplots()
 
         fig = plt.figure(figsize=(8, 8))
         grid = plt.GridSpec(6, 6, hspace=0.6, wspace=0.6)
@@ -152,52 +148,53 @@ if __name__ == '__main__':
         plt.savefig(
              "RR_plots/Dist_" + subject + '_' + elnames[el_idx] + '_' + nazwy[a] + '_emb_' + str(embedding) + '_td_' + str(
                  timedel) + '_tstamp_' + str((interval * counter) / srate) + '_v4s' + '.png',  dpi=500)
-        plt.close()
+        #plt.close()
         ###################################
 
-        #ImageGenerator.save_recurrence_plot(result.recurrence_matrix_reverse_normalized,'fz_tests.png')
-        settings = Settings(time_series,
-                            analysis_type=Classic,
-                            neighbourhood=FixedRadius(0.65),
-                            similarity_measure=EuclideanMetric,
-                            theiler_corrector=1)
+        if ComputeResult:
+            #ImageGenerator.save_recurrence_plot(result.recurrence_matrix_reverse_normalized,'fz_tests.png')
+            settings = Settings(time_series,
+                                analysis_type=Classic,
+                                neighbourhood=FixedRadius(0.65),
+                                similarity_measure=EuclideanMetric,
+                                theiler_corrector=1)
 
-        computation = RQAComputation.create(settings,
-                                            verbose=True)
-        result = computation.run()
-        result.min_diagonal_line_length = 2
-        result.min_vertical_line_length = 2
-        result.min_white_vertical_line_length = 2
+            computation = RQAComputation.create(settings,
+                                                verbose=True)
+            result = computation.run()
+            result.min_diagonal_line_length = 2
+            result.min_vertical_line_length = 2
+            result.min_white_vertical_line_length = 2
 
-        rqaArray = result.to_array()
-        tt = rqaArray[10]
-        fnn_dic[str((interval * counter) / srate)] = fnn
-        tt_dic[str((interval * counter) / srate)] = tt
-        timestamps.append((interval * counter) / srate)
-        fnn_list.append(fnn)
-        tt_list.append(tt)
-        counter += 1
+            rqaArray = result.to_array()
+            tt = rqaArray[10]
+            fnn_dic[str((interval * counter) / srate)] = fnn
+            tt_dic[str((interval * counter) / srate)] = tt
+            timestamps.append((interval * counter) / srate)
+            fnn_list.append(fnn)
+            tt_list.append(tt)
+            counter += 1
 
-    fig = plt.figure(figsize=(10, 7.5))
-    ax = fig.add_subplot(111)
-    ax2 = ax.twinx()
-    ax.scatter(timestamps, fnn_list, color="red", alpha=0.3)
-    ax2.scatter(timestamps, tt_list, color="blue", alpha=0.3)
-    ax.set_ylabel("FNN", color="red")
-    ax2.set_ylabel("TT", color="blue", rotation=270)
+            fig = plt.figure(figsize=(10, 7.5))
+            ax = fig.add_subplot(111)
+            ax2 = ax.twinx()
+            ax.scatter(timestamps, fnn_list, color="red", alpha=0.3)
+            ax2.scatter(timestamps, tt_list, color="blue", alpha=0.3)
+            ax.set_ylabel("FNN", color="red")
+            ax2.set_ylabel("TT", color="blue", rotation=270)
 
-    ax.set_yticks(np.round(np.linspace(np.min(fnn_list), np.max(fnn_list), 10), 2))
-    ax2.set_yticks(np.round(np.linspace(np.min(tt_list), np.max(tt_list), 10), 2))
-    plt.xticks(timestamps)
-    ax.set_xlabel('Timestamps')
-    plt.title("Electrode C6 " + "beta" + " band")
+            ax.set_yticks(np.round(np.linspace(np.min(fnn_list), np.max(fnn_list), 10), 2))
+            ax2.set_yticks(np.round(np.linspace(np.min(tt_list), np.max(tt_list), 10), 2))
+            plt.xticks(timestamps)
+            ax.set_xlabel('Timestamps')
+            plt.title("Electrode C6 " + "beta" + " band")
 
-    plt.savefig("FNN_TT" + "_C6_beta_" + '.png')
-    plt.close()
+            plt.savefig("FNN_TT" + "_C6_beta_" + '.png')
+            plt.close()
 
-    plt.scatter(tt_list, fnn_list)
-    plt.xlabel("Trapping times")
-    plt.ylabel("Fnns")
-    plt.show()
+            plt.scatter(tt_list, fnn_list)
+            plt.xlabel("Trapping times")
+            plt.ylabel("Fnns")
+            plt.show()
 
 

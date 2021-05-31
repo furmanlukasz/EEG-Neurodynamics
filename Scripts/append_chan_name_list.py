@@ -5,7 +5,7 @@ with open('channel_names.txt', 'r') as f:
 Eall = list(open("channel_names.txt"))
 names = [Eall[i][1:3] for i in range(len(Eall))]
 names
-with open("channel_names.txt", "r") as backfile:
+with open("Scripts/channel_names.txt", "r") as backfile:
     lines = backfile.readlines()
     lines
     len(lines)
