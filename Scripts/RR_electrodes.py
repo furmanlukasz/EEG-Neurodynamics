@@ -15,6 +15,9 @@ from pyrqa.analysis_type import Classic
 from pyrqa.analysis_type import Cross
 from pyrqa.neighbourhood import FixedRadius, RadiusCorridor
 from pyrqa.metric import EuclideanMetric
+from pyrqa.metric import TaxicabMetric
+from pyrqa.metric import Sigmoid
+from pyrqa.metric import Cosine
 from pyrqa.computation import RQAComputation
 from pyrqa.neighbourhood import Unthresholded
 
@@ -28,6 +31,15 @@ import pickle
 PlotTimeAndFreq = False # set True to plot Frequency Domain and Time Domain
 ComputeResult = False # set True to plot FNN/TT
 ComputeSingleElectrode = True
+
+def normalize(arr, t_min, t_max):
+    norm_arr = []
+    diff = t_max - t_min
+    diff_arr = max(arr) - min(arr)
+    for i in arr:
+        temp = (((i - min(arr))*diff)/diff_arr) + t_min
+        norm_arr.append(temp)
+    return norm_arr
 
 def computeWelchMethod(signal,npnts,showPlot=False):
     # "dynamic" FFT via welch's function
@@ -75,14 +87,34 @@ def setDataSlice(df,fromrange, torange):
         ndata[i] = df[i][fromrange:torange]
     return ndata
 
-def computeRQA(j,embedding,timedel,el_idx,selected_band,interval,counter,srate,subject):
-    time_series = TimeSeries(j,
+def computeRQA(sampleEEG,embedding,timedel):
+    time_series = TimeSeries(sampleEEG,
                              embedding_dimension=embedding,
                              time_delay=timedel)
 
     settings = Settings(time_series,
                         analysis_type=Classic,
-                        neighbourhood=FixedRadius(radius=10.0),
+                        #neighbourhood=FixedRadius(radius=radius_nbh),
+                        neighbourhood=Unthresholded(),
+                        #neighbourhood=RadiusCorridor(inner_radius=0.1,outer_radius=5.0),
+                        similarity_measure=Cosine,#Sigmoid,#TaxicabMetric,#Sigmoid,#EuclideanMetric,
+                        theiler_corrector=1)
+
+    computation = RPComputation.create(settings,
+                                       verbose=True)
+
+    result = computation.run()
+
+    return result.recurrence_matrix
+
+def computeRQA_tr(sampleEEG,embedding,timedel,radius_nbh):
+    time_series = TimeSeries(sampleEEG,
+                             embedding_dimension=embedding,
+                             time_delay=timedel)
+
+    settings = Settings(time_series,
+                        analysis_type=Classic,
+                        neighbourhood=FixedRadius(radius=radius_nbh),
                         #neighbourhood=Unthresholded(),
                         #neighbourhood=RadiusCorridor(inner_radius=0.1,outer_radius=5.0),
                         similarity_measure=EuclideanMetric,
@@ -92,33 +124,63 @@ def computeRQA(j,embedding,timedel,el_idx,selected_band,interval,counter,srate,s
                                        verbose=True)
 
     result = computation.run()
-    nbrtype = 'neighbourhood=FixedRadius(radius=10.0)'
+    # nbrtype = 'neighbourhood=FixedRadius(radius=%s)' % radius_nbh
+    # fig = plt.figure(figsize=(8, 8))
+    # grid = plt.GridSpec(6, 6, hspace=0.6, wspace=0.6)
+    # plt.title(electrodeName[el_idx] + ', ' + bands[selected_band] + ' band, ' + 'emb = ' + str(embedding) + ' td = ' + str(timedel) + ' timestamp ' + str((interval * counter) / srate) )
+    #
+    # plt.axis('off')
+    #
+    # main_ax = fig.add_subplot(grid[:-1, 1:])
+    # # y_hist = fig.add_subplot(grid[:-1, 0], xticklabels=[], sharey=main_ax)
+    # x_hist = fig.add_subplot(grid[-1, 1:], yticklabels=[], sharex=main_ax)
+    # main = main_ax.imshow(result.recurrence_matrix_reverse_normalized[::-1], cmap='gray', interpolation='none',origin='upper')
+    # x_hist.plot(j, color='gray')
+    # x_hist.set_xlabel(nbrtype)
+    # # x_hist.invert_yaxis()
+    # # y_hist.plot(np.array(j).T, color='gray')
+    # # y_hist.invert_xaxis()
+    # cbar_ax = fig.add_axes([0.04, 0.10, 0.05, 0.7])
+    # fig.colorbar(main, cax=cbar_ax)
+    # main_ax.invert_yaxis()
+    #
+    # plt.savefig(
+    #     "../RR_plots/Dist_" + subject + '_' + electrodeName[el_idx] + '_' + bands[selected_band] + '_emb_' + str(
+    #         embedding) + '_td_' + str(
+    #         timedel) + '_tstamp_' + str((interval * counter) / srate) + '_v4s_' + 'radius_nbh_' + str(radius_nbh) + '.png', dpi=250)
+    return result.recurrence_matrix_reverse_normalized[::-1]
+
+def Plot(matrix, color, uniqname,el_id):
+
     fig = plt.figure(figsize=(8, 8))
     grid = plt.GridSpec(6, 6, hspace=0.6, wspace=0.6)
-    plt.title(electrodeName[el_idx] + ', ' + bands[selected_band] + ' band, ' + 'emb = ' + str(embedding) + ' td = ' + str(timedel) + ' timestamp ' + str((interval * counter) / srate) )
+    plt.title(
+        electrodeName[el_id] + ', ' + bands[selected_band] + ' band, ' + 'emb = ' + str(emb) + ' td = ' + str(
+            td) + ' timestamp ' + str((interval * counter) / srate))
 
     plt.axis('off')
 
     main_ax = fig.add_subplot(grid[:-1, 1:])
     # y_hist = fig.add_subplot(grid[:-1, 0], xticklabels=[], sharey=main_ax)
     x_hist = fig.add_subplot(grid[-1, 1:], yticklabels=[], sharex=main_ax)
-    main = main_ax.imshow(result.recurrence_matrix_reverse_normalized[::-1], cmap='gray', interpolation='none',origin='upper')
-    x_hist.plot(j, color='gray')
-    x_hist.set_xlabel(nbrtype)
+    main = main_ax.imshow(matrix, cmap=color, interpolation='none',
+                          origin='upper')
+    x_hist.plot(eeg_sample, color='gray')
+    #nbrtype = 'neighbourhood=FixedRadius(radius=%s)' % rad_nbh
+    #x_hist.set_xlabel(nbrtype)
     # x_hist.invert_yaxis()
     # y_hist.plot(np.array(j).T, color='gray')
     # y_hist.invert_xaxis()
     cbar_ax = fig.add_axes([0.04, 0.10, 0.05, 0.7])
     fig.colorbar(main, cax=cbar_ax)
-    main_ax.invert_yaxis()
+    #main_ax.invert_yaxis()
 
     plt.savefig(
-        "../RR_plots/Dist_" + subject + '_' + electrodeName[el_idx] + '_' + bands[selected_band] + '_emb_' + str(
-            embedding) + '_td_' + str(
-            timedel) + '_tstamp_' + str((interval * counter) / srate) + '_v4s_'+ nbrtype + '.png', dpi=500)
+         "../RR_plots/Dist_" + subject + '_' + electrodeName[el_id] + '_' + bands[selected_band] + '_emb_' + str(
+             emb) + '_td_' + str(
+             td) + '_tstamp_' + str(len(eeg_sample)/ srate) + 's_' + uniqname + '.png', dpi=250)
 
-
-def computeFNN_TT(j,embedding,timedel,interval,counter,srate):
+def computeFNN_TT(j,embedding,timedel,interval,counter,srate,fnn):
     #ImageGenerator.save_recurrence_plot(result.recurrence_matrix_reverse_normalized,'fz_tests.png')
 
     time_series = TimeSeries(j,
@@ -175,13 +237,23 @@ if __name__ == '__main__':
     dane = setDataSlice(df, 2000, 3000)
     srate = 250
 
+    ### LONG RUN COMPUTATION TEST
+    computeListParams = False
+    metric = 'Cosine'
     #RQA settings
-    timedel =  1 #1 2 3 4 8 16 32 64
-    embedding =  4  # 2 4 8 16 32 64
+    if not computeListParams:
+        timedel = [2]
+        embedding = [10]
+        radiusnbh = [10]
+    else:
+        timedel = [8,8]
+        embedding = [4,6]
+        radiusnbh = [18]
+
     interval = 1000
     el_idx = 16
-    bands = ['delta', 'theta', 'alpha', 'beta', 'gamma', 'high gamma']
-    selected_band = 3
+    bands = ['delta', 'theta', 'alpha', 'beta', 'gamma', 'high gamma','no-filter']
+    selected_band = 6
     subject = 'SubjectName'
 
     fnn_list = []
@@ -197,50 +269,32 @@ if __name__ == '__main__':
         plot_Time_Freq_Domain(np.array(dane[el_idx]))
 
     db4 = pywt.Wavelet('db4')
-
-    if ComputeSingleElectrode:
-        coeffs = pywt.wavedec(dane[el_idx], db4, mode='periodic', level=5)
-
-        f = signal.resample(coeffs[selected_band], npnts)
-        f = dane[el_idx]
-        #fw = computeWelchMethod(dane[el_idx],(npnts*2)-1,showPlot=True)
-        #f = fw
-
-        if interval:
-            list_of_slices = zip(*(iter(f),) * interval)
-
-            counter = 1
-        for j in list_of_slices:
-
-            computeRQA(j, embedding, timedel, el_idx, selected_band, interval, counter, srate, subject)
+    counterTD = 1
+    counterEMB = 1
+    counterRadNBH = 1
+    counter = 1
 
 
-            fnn = dimension.fnn(j, dim=[embedding], tau=timedel, metric='euclidean')[2].item()
-            # fnn = np.asscalar(dimension.fnn(j, dim=[embedding], tau=timedel, metric='euclidean')[2])
+    #coeffs = pywt.wavedec(dane[el_idx], db4, mode='periodic', level=5)
+    #eeg_sample = signal.resample(coeffs[selected_band], npnts)
+    np.random.seed(0)
+    eleIDX = [i for i in range(64)]
+    for i in eleIDX:
+        interval = len(dane[i])
+        eeg_sample = normalize(dane[i], -1.0, 1.0)
+        for td in timedel:
 
-            if ComputeResult:
-                computeFNN_TT(j, embedding, timedel, interval, counter, srate)
+            for emb in embedding:
 
-            counter += 1
-    else:
-        for electrode in range(len(electrodeName)):
+                nontr = computeRQA(eeg_sample, emb, td)
 
-            coeffs = pywt.wavedec(dane[electrode], db4, mode='periodic', level=5)
-            f = signal.resample(coeffs[selected_band], npnts)
+                Plot(nontr, 'jet', 'el_idx'+str(i)+metric,i)
 
-            if interval:
-                list_of_slices = zip(*(iter(f),) * interval)
-                counter = 1
-            for j in list_of_slices:
 
-                computeRQA(j, embedding, timedel, electrode, selected_band, interval, counter, srate, subject)
+                counterEMB += 1
 
-                fnn = dimension.fnn(j, dim=[embedding], tau=timedel, metric='euclidean')[2].item()
-                # fnn = np.asscalar(dimension.fnn(j, dim=[embedding], tau=timedel, metric='euclidean')[2])
+            counterTD += 1
 
-                if ComputeResult:
-                    computeFNN_TT(j, embedding, timedel, interval, counter, srate)
-
-                counter += 1
+    counter =+ 1
 
 

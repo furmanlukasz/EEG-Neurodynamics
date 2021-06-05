@@ -46,11 +46,11 @@ coeffs2 = pywt.wavedec(dane[1], db4, mode='periodic', level=5)
 f = signal.resample(coeffs[selected_band], npnts)
 f2 = signal.resample(coeffs2[selected_band], npnts)
 
-data_points_x = dane[0]
+data_points_x = dane[8]
 time_series_x = TimeSeries(data_points_x,
                            embedding_dimension=5,
                            time_delay=1)
-data_points_y = dane[1]
+data_points_y = dane[22]
 time_series_y = TimeSeries(data_points_y,
                            embedding_dimension=5,
                            time_delay=1)
@@ -58,7 +58,7 @@ time_series = (time_series_x,
                time_series_y)
 settings = Settings(time_series,
                     analysis_type=Cross,
-                    neighbourhood=FixedRadius(0.73),
+                    #neighbourhood=FixedRadius(0.73),
                     similarity_measure=EuclideanMetric,
                     theiler_corrector=0)
 computation = RQAComputation.create(settings,
@@ -75,15 +75,16 @@ grid = plt.GridSpec(6, 6, hspace=0.6, wspace=0.6)
 main_ax = fig.add_subplot(grid[:-1, 1:])
 
 x_hist = fig.add_subplot(grid[-1, 1:], yticklabels=[], sharex=main_ax)
+x_hist2 = fig.add_subplot(grid[1, 1:], yticklabels=[], sharex=x_hist)
 main = main_ax.imshow(result.recurrence_matrix_reverse, interpolation='none',origin='upper')
-x_hist.plot(f, color='gray')
-
+x_hist.plot(data_points_x, color='gray')
+x_hist2.plot(data_points_y, color='gray')
 cbar_ax = fig.add_axes([0.04, 0.10, 0.05, 0.7])
 fig.colorbar(main, cax=cbar_ax)
 main_ax.invert_yaxis()
 
 plt.savefig(
-    "../RR_plots/Cross1_.png", dpi=500)
+    "../RR_plots/Cross2_.png", dpi=500)
 
 ImageGenerator.save_recurrence_plot(result.recurrence_matrix_reverse,
                                     'cross_recurrence_plot.png')
