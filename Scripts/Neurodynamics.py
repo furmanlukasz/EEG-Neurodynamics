@@ -245,6 +245,19 @@ class ComputeTask(object):
             "../TimeDomain_plots/TimeDomainAndFFT_" + self.subject + '_electrode_' + self.electrode + '_'  '_tstamp_' + str(self.timestep) + 's_.png', dpi=250)
         plt.close()
 
+    def SFT(self):
+        f, t, Zxx = signal.stft(self.eegSampleRaw, fs=250, nperseg=62,noverlap=32)
+        #plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=10, shading='gouraud')
+        plt.title('STFT Magnitude')
+        plt.ylabel('Frequency [Hz]')
+        plt.xlabel('Time [sec]')
+        Zxx = Zxx.T
+        plt.plot(f, np.abs(Zxx[0].real), '-o', label='FFT one row')
+        plt.savefig(
+            "../Spectrogram_plots/Spectrogram_SFT" + self.subject + '_electrode_' + self.electrode + '_'  '_tstamp_' + str(
+                self.timestep) + 's_.png', dpi=250)
+        plt.close()
+        return
 
     def SaveSpectrogram(self):
         f, t, Sxx = spectrogram(np.array(self.eegSampleRaw), fs=250) #noverlap=10,
