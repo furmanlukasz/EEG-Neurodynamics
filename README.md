@@ -6,6 +6,6 @@
 
 
 ## (WIP)
-![](icons.jpg)
-
+[![](icons.jpg)](https://drive.google.com/file/d/1wDFHYdmxJVtAaUpK_vbP-rcDrzxUQZji/view?usp=sharing "recurrence plot GPU (GLSL matrix)")
+[![](map_icon.JPG)](https://drive.google.com/file/d/1mwQFyKCHeU93uIXF9q4lqBjlxuEIU0KO/view?usp=sharing "Topographical EEG map, GLSL based")
 
