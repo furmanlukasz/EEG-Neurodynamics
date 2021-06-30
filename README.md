@@ -10,5 +10,5 @@
 ### Recurrence Plot (GLSL based)
 [![](icons.jpg)](https://drive.google.com/file/d/1wDFHYdmxJVtAaUpK_vbP-rcDrzxUQZji/view?usp=sharing)
 ### Topographical EEG map (GLSL based)
-[![](map_icon.jpg)](https://drive.google.com/file/d/1mwQFyKCHeU93uIXF9q4lqBjlxuEIU0KO/view?usp=sharing)
+[![](mapIcon.jpg)](https://drive.google.com/file/d/1mwQFyKCHeU93uIXF9q4lqBjlxuEIU0KO/view?usp=sharing)
 
