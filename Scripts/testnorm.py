@@ -50,7 +50,7 @@ if __name__ == '__main__':
     electrodeList = ['CP4']
 
     task1 = Neurodynamics.ComputeTask('testSubject', data, 250, 'O1')
-    slice = task1.getDataSlice(0,10000)
+    slice = task1.getDataSlice(0,10240)
     # # save numpy array as csv file
     #
     #
