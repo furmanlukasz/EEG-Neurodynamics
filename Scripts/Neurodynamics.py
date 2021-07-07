@@ -246,7 +246,7 @@ class ComputeTask(object):
         plt.close()
 
     def SFT(self):
-        f, t, Zxx = signal.stft(self.eegSampleRaw,fs=250, nfft=124, nperseg=62,noverlap=59)
+        f, t, Zxx = signal.stft(self.eegSampleRaw,fs=250, nperseg=62,noverlap=61)
         plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=10, shading='gouraud')
         plt.title('STFT Magnitude')
         plt.ylabel('Frequency [Hz]')
