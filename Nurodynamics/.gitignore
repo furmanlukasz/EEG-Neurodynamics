@@ -1,0 +1,11 @@
+*.pkl
+*.npz
+
+
+*.png
+*.mov
+*.mp4
+Temp
+Backup
+td
+

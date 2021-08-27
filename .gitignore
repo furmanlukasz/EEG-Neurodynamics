@@ -4,5 +4,7 @@
 
 *.png
 *.mov
-FastTools/DistancePlotGPU.3_prez.toe
-FastTools/DistancePlotGPU_prez.toe
+FastTools/*
+FastTools/*
+FastTools/DistancePlotGPU.3.toe
+FastTools/DistancePlotGPU.toe
