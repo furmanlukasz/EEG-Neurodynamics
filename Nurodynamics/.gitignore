@@ -5,7 +5,7 @@
 *.png
 *.mov
 *.mp4
-Temp
-Backup
-td
+Temp/*
+Backup/*
+td/*
 
