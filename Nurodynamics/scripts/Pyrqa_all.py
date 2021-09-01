@@ -21,6 +21,8 @@ parser = ArgumentParser()
 parser.add_argument('fromrange',type=int)
 parser.add_argument('torange',type=int)
 parser.add_argument('numChan',type=int)
+parser.add_argument('d0',type=float)
+parser.add_argument('d1',type=float)
 args = parser.parse_args()
 
 def linearMap(sig, d0, d1):
@@ -51,7 +53,7 @@ if __name__ == '__main__':
 
         sig = genfromtxt('Temp/sft' + str(i) + '/dist.csv', delimiter=',')
 
-        sig = linearMap(sig,0.352,0.549)
+        sig = linearMap(sig,args.d0,args.d1)
         print(sig.shape)
         task = Neurodynamics.ComputeTask('testSubject',sig[args.fromrange:args.torange],250,0)
         result, result1 = task.computeRP(td=0,

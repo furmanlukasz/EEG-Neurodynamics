@@ -1,7 +1,7 @@
 *.pkl
 *.npz
 
-
+scripts/subj1/*
 *.png
 *.mov
 *.mp4
