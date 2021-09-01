@@ -8,7 +8,7 @@
 ## (WIP)
 
 
-### Recurrence Plot (GLSL based)
+
 [![](Neurodynamics.jpg)](https://drive.google.com/file/d/15xtPHrREqCoh8_8BmR3fjI2LE1rRGDHm/view?usp=sharing)
 
 
